@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OEIS Lookup</title>
+
+
+    <style media="screen">
+      *{
+        box-sizing: border-box;
+      }
+
+
+      button{
+        all: initial;
+        cursor: pointer;
+      }
+
+      body,button{
+        font-family: "Roboto", sans-serif;
+      }
+
+      table{
+        border-collapse: collapse;
+        width: 80vh;
+        height: 80vh;
+        max-height: 500px;
+        max-width: 500px;
+      }
+
+      td{
+        padding: 0;
+        border: 1px solid black;
+        margin: 0;
+        text-align: center;
+        user-select: none;
+        cursor: pointer;
+      }
+
+      .picked{
+        background: red;
+      }
+
+      #source{
+        position: absolute;
+        top: 0;
+        right: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OEIS Lookup</h1>
+    <div id = "nooeis" hidden>This sequence is not in the OEIS.</div>
+    <div id = "oeis" hidden>This sequence is in the OEIS as <a></a></div>
+    <div id = "loading" hidden>Loading OEIS info...</div>
+    <div id = "error" hidden>Your function returned an error</div>
+    <h2>Enter a JS function</h2>
+    <label>f(x) = <input id = "function" placeholder="x**2 + 3"></label>
+    <h2>Or select at least 3 values from the table</h2>
+    <table></table>
+
+
+    <a id="source" href="https://github.com/realprogrammer5000/oeis-lookup">Source code</a>
+  <script>
+      var table = document.querySelector("table");
+
+  const searchOEIS = seq => fetch("https://cors-anywhere.herokuapp.com/https://oeis.org/search?q=" + seq.join(",") + "&fmt=json").then(x=>x.json());
+
+  const noOEIS = document.querySelector("#nooeis");
+  const OEIS = document.querySelector("#oeis");
+  const loading = document.querySelector("#loading");
+  const func = document.querySelector("#function");
+  const error = document.querySelector("#error");
+  const link = document.querySelector("#oeis a");
+
+  const clickFunc = e => {
+      console.log(e);
+      var elem;
+      if(e.target.nodeName.toLowerCase() === "button"){
+          elem = e.target.parentElement;
+      }else{
+          elem = e.target;
+      }
+      elem.classList.toggle("picked");
+
+      var toggled = document.querySelectorAll(".picked");
+
+      noOEIS.hidden = true;
+      oeis.hidden = true;
+      loading.hidden = true;
+      if(toggled.length > 2){
+          var arr = Array.from(toggled).map(x=>parseInt(x.innerText));
+          console.log("seq is", arr);
+          loading.hidden = false;
+          searchOEIS(arr).then(x=>{
+              loading.hidden = true;
+              if(!x.results){
+                  noOEIS.hidden = false;
+                  oeis.hidden = true;
+              }else{
+                  console.log(x);
+                  noOEIS.hidden = true;
+                  oeis.hidden = false;
+                  link.innerText = "A" + x.results[0].number;
+                  link.href = "https://oeis.org/A" + x.results[0].number;
+              }
+          });
+      }
+  };
+
+  // generate the table for sequences
+  for(var i = 0; i < 10; i++){
+      var tr = document.createElement("tr");
+      for(var i2 = 0; i2 < 10; i2++){
+          var td = document.createElement("td");
+          td.innerHTML = "<button>" + (i * 10 + i2) + "</button>";
+          td.onclick = clickFunc;
+          tr.appendChild(td);
+      }
+      table.appendChild(tr);
+  }
+  //document.body.appendChild(table);
+
+  func.oninput = () => {
+      if(func.value && func.value.trim()){
+          try{
+              noOEIS.hidden = true;
+              oeis.hidden = true;
+              loading.hidden = false;
+              var arr = [];
+              for(var x = 1; x < 7; x ++){
+                  arr.push(eval(func.value));
+              }
+              error.hidden = true;
+              searchOEIS(arr).then(x=>{
+                  loading.hidden = true;
+                  if(!x.results){
+                      noOEIS.hidden = false;
+                      oeis.hidden = true;
+                  }else{
+                      console.log(x);
+                      noOEIS.hidden = true;
+                      oeis.hidden = false;
+                      link.innerText = "A" + x.results[0].number;
+                      link.href = "https://oeis.org/A" + x.results[0].number;
+                  }
+              });
+          }catch(e){
+              noOEIS.hidden = true;
+              oeis.hidden = true;
+              loading.hidden = true;
+              error.hidden = false;
+          }
+      }else{
+          noOEIS.hidden = true;
+          oeis.hidden = true;
+          loading.hidden = true;
+          error.hidden = true;
+      }
+  };
+  func.oninput();
+  </script>
+  </body>
+</html>
